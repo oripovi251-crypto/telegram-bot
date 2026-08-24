@@ -11,14 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: actions/checkout@v4
+      - name: Kodni yuklash
+        uses: actions/checkout@v4
 
-      - name: Python o'rnatish
+      - name: Python o‘rnatish
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - run: pip install -r requirements.txt
+      - name: Kutubxonalarni o‘rnatish
+        run: |
+          pip install python-telegram-bot google-genai requests
 
       - name: Botni ishga tushirish
         env:
