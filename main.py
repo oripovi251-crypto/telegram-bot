@@ -1,4 +1,4 @@
-runs:
+import ...
   using: 'node24'
   main: 'main.js'
 AI_SYSTEM = """
