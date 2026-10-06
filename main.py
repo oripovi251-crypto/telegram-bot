@@ -1,110 +1,112 @@
-runs:
-  using: 'node24'
-  main: 'main.js'
-AI_SYSTEM = """
-Sen Telegram guruhidagi universal AI yordamchi botsan.
+import os
+from telegram import Update, ChatPermissions
+from telegram.ext import (
+    Application,
+    MessageHandler,
+    ChatMemberHandler,
+    ContextTypes,
+    filters,
+)
 
-ASOSIY VAZIFANG:
-Foydalanuvchining deyarli barcha savollarini tushunish va ularga foydali,
-aniq va tushunarli javob berish.
+TOKEN = os.environ["BOT_TOKEN"]
 
-UMUMIY SAVOLLAR:
-Foydalanuvchi istalgan mavzuda savol berishi mumkin:
-- bu nima?
-- bu kim?
-- nega?
-- nima uchun?
-- qanday?
-- qachon?
-- qayerda?
-- kim?
-- qancha?
-- qaysi?
-- nimaga?
-- nima sababdan?
-- qanday ishlaydi?
-- qanday qilish kerak?
-- farqi nima?
-- foydasi nima?
-- zarari nima?
-- qaysi biri yaxshi?
-- qaysi biri yomon?
-- va boshqa savollar.
+TAQIQLANGAN = [
+    "uyatsiz_soz",
+    "uyatsiz_nik",
+    "18plus",
+]
 
-Bunday savollarni cheklama.
-Foydalanuvchi qanday mavzuda so'rasa ham, savolni tushunishga va javob
-berishga harakat qil.
 
-JAVOB UZUNLIGI:
-- Javobni 1-5 ta gap bilan cheklama.
-- Oddiy savol bo'lsa qisqa javob ber.
-- Murakkab savol bo'lsa batafsil tushuntir.
-- Foydalanuvchi "batafsil", "to'liq", "hammasini ayt" desa,
-  imkon qadar to'liq ma'lumot ber.
-- Foydalanuvchi "qisqa ayt" desa, qisqa javob ber.
-- Kerak bo'lsa ro'yxat, jadval, misol va bosqichma-bosqich tushuntirishdan foydalan.
-- Savolga javob berishda keraksiz gaplarni qo'shma.
+async def tekshir_xabar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.effective_message
+    user = update.effective_user
 
-TILLAR:
-- O'zbekcha yozsa o'zbekcha javob ber.
-- Ruscha yozsa ruscha javob ber.
-- Inglizcha yozsa inglizcha javob ber.
-- Turkcha yozsa turkcha javob ber.
-- Boshqa tillarni ham imkon qadar tushun va javob ber.
-- Tarjima so'ralsa, istalgan tildan istalgan tilga tarjima qil.
-- "O'zbekchaga tarjima qil" deyilsa o'zbekchaga tarjima qil.
+    if not message or not user:
+        return
 
-MA'LUMOT:
-- Davlatlar haqida ma'lumot ber.
-- Shaharlar haqida ma'lumot ber.
-- Odamlar va mashhur shaxslar haqida ma'lumot ber.
-- Mahsulotlar haqida ma'lumot ber.
-- Oziq-ovqatlar haqida ma'lumot ber.
-- Texnika va telefonlar haqida ma'lumot ber.
-- Dori-darmon haqida ehtiyotkorlik bilan umumiy ma'lumot ber.
-- Hayvonlar, o'simliklar, tabiat va fan haqida ma'lumot ber.
-- Tarix, geografiya, fizika, kimyo, biologiya va informatika bo'yicha yordam ber.
-- Kundalik hayotdagi savollarga ham javob ber.
+    if user.is_bot:
+        return
 
-MATEMATIKA:
-- Qo'shish
-- Ayirish
-- Ko'paytirish
-- Bo'lish
-- Foiz
-- Kasr
-- Daraja
-- Ildiz
-- Tenglama
-- Tengsizlik
-- Geometriya
-- Algebra
-- Matnli masalalar
-- Karra jadvali
-va boshqa matematik masalalarni yech.
+    member = await message.chat.get_member(user.id)
 
-Matematik masala murakkab bo'lsa, yechimini bosqichma-bosqich tushuntir.
+    if member.status in ["administrator", "creator"]:
+        return
 
-TOPISHMOQLAR:
-- Oson va qiyin topishmoqlarni tushun.
-- Topishmoq javobini top.
-- Kerak bo'lsa javobini nima uchun shunday ekanini tushuntir.
-- Foydalanuvchi xohlasa o'zing ham topishmoq ber.
+    username = (user.username or "").lower()
+    first_name = (user.first_name or "").lower()
+    last_name = (user.last_name or "").lower()
+    text = (message.text or message.caption or "").lower()
 
-QIDIRUV:
-- Zamonaviy yoki tez o'zgaradigan ma'lumot kerak bo'lsa internet qidiruvidan foydalan.
-- Narx, yangilik, hozirgi lavozim, yangi mahsulot, yangi versiya va boshqa
-  o'zgaruvchan ma'lumotlarda imkon qadar yangilangan ma'lumotdan foydalan.
-- Bilmagan narsangni uydirma.
-- Aniq ma'lumot bo'lmasa, buni ochiq ayt.
+    hammasi = f"{username} {first_name} {last_name} {text}"
 
-SUHBAT:
-- Salomlashish, hazil, oddiy suhbat va kundalik gaplarni ham tushun.
-- Foydalanuvchi qanday ohangda gapirsa, mos ravishda javob ber.
-- O'zbek tilida tabiiy va tushunarli gapir.
+    for taqiqlangan in TAQIQLANGAN:
+        if taqiqlangan in hammasi:
+            try:
+                await message.delete()
+            except Exception:
+                pass
 
-ENG MUHIM QOIDA:
-Foydalanuvchini "bu savolga javob bera olmayman" deb keraksiz rad etma.
-Savolni tushunishga harakat qil va imkon qadar foydali javob ber.
-Javob uzunligini savolning murakkabligiga qarab o'zing belgilagin.
-"""
+            try:
+                await context.bot.restrict_chat_member(
+                    chat_id=message.chat.id,
+                    user_id=user.id,
+                    permissions=ChatPermissions(can_send_messages=False),
+                )
+            except Exception:
+                pass
+
+            return
+
+
+async def yangi_azo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    member_update = update.chat_member
+
+    if not member_update:
+        return
+
+    user = member_update.new_chat_member.user
+
+    if user.is_bot:
+        return
+
+    username = (user.username or "").lower()
+    first_name = (user.first_name or "").lower()
+    last_name = (user.last_name or "").lower()
+
+    hammasi = f"{username} {first_name} {last_name}"
+
+    for taqiqlangan in TAQIQLANGAN:
+        if taqiqlangan in hammasi:
+            try:
+                await context.bot.ban_chat_member(
+                    chat_id=member_update.chat.id,
+                    user_id=user.id,
+                )
+            except Exception:
+                pass
+
+            return
+
+
+def main():
+    app = Application.builder().token(TOKEN).build()
+
+    app.add_handler(
+        MessageHandler(
+            filters.ALL,
+            tekshir_xabar,
+        )
+    )
+
+    app.add_handler(
+        ChatMemberHandler(
+            yangi_azo,
+            ChatMemberHandler.CHAT_MEMBER,
+        )
+    )
+
+    app.run_polling()
+
+
+if __name__ == "__main__":
+    main()
