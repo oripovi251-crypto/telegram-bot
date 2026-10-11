@@ -8,7 +8,7 @@ from telegram.ext import (
     filters,
 )
 
-TOKEN = os.environ["BOT_TOKEN"]
+TOKEN = os.environ[8232979014:AAH34GkR6VLgMr-gVvfgla_EBRsesOgpv0E]
 
 TAQIQLANGAN = [
     "uyatsiz_soz",
