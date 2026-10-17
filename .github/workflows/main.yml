@@ -1,7 +1,7 @@
-yaml
+
 name: Telegram bot moderation
 
-on:
+'on':
   workflow_dispatch:
   push:
     branches:
